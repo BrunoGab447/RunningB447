@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Registro de Corridas na Esteira</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f9f9f9;
+    }
+    h1, h2 {
+      color: #333;
+    }
+    form {
+      background: #fff;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      max-width: 400px;
+      margin-bottom: 20px;
+    }
+    form div {
+      margin-bottom: 10px;
+    }
+    label {
+      display: inline-block;
+      width: 130px;
+    }
+    input[type="text"],
+    input[type="number"] {
+      padding: 5px;
+      width: calc(100% - 140px);
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    button, input[type="submit"] {
+      padding: 8px 15px;
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    button:hover, input[type="submit"]:hover {
+      background-color: #218838;
+    }
+    .records {
+      background: #fff;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      max-width: 500px;
+    }
+    .record {
+      margin-bottom: 8px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Registro de Corridas na Esteira</h1>
+  <form id="runForm">
+    <div>
+      <label for="nome">Nome:</label>
+      <input type="text" id="nome" name="nome" required>
+    </div>
+    <div>
+      <label for="distancia">Distância (km):</label>
+      <input type="number" id="distancia" name="distancia" step="0.01" required>
+    </div>
+    <div>
+      <label for="tempo">Tempo (min):</label>
+      <input type="number" id="tempo" name="tempo" step="0.1" required>
+    </div>
+    <input type="submit" value="Registrar Corrida">
+  </form>
+ 
+  <div class="records">
+    <h2>Corridas Registradas</h2>
+    <ul id="recordList"></ul>
+  </div>
+ 
+  <script>
+    const form = document.getElementById('runForm');
+    const recordList = document.getElementById('recordList');
+    // URL do seu Web App do Google Apps Script
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxH63iSixzbxZfimPDvEwS3BjRSyb8--Wh9l0Xi1bJkXsuaLhrSGKlSVNcKA5zmpE0qbQ/exec';
+ 
+    // Função para buscar os registros na planilha via GET
+    function fetchRecords() {
+      fetch(scriptURL)
+        .then(response => response.json())
+        .then(data => {
+          recordList.innerHTML = '';
+          if (data.status === 'success' && data.data.length > 0) {
+            data.data.forEach(record => {
+              const li = document.createElement('li');
+              li.className = 'record';
+              // Utiliza os cabeçalhos definidos: nome, distancia e tempo
+              li.textContent = `${record.nome} - ${record.distancia} km em ${record.tempo} minutos`;
+              recordList.appendChild(li);
+            });
+          } else {
+            recordList.innerHTML = '<li>Nenhuma corrida registrada.</li>';
+          }
+        })
+        .catch(error => {
+          console.error('Erro ao buscar os registros:', error);
+        });
+    }
+ 
+    // Processa o envio do formulário e envia os dados via POST
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const nome = document.getElementById('nome').value.trim();
+      const distancia = document.getElementById('distancia').value;
+      const tempo = document.getElementById('tempo').value;
+     
+      if (nome && distancia && tempo) {
+        const data = { nome, distancia, tempo };
+        fetch(scriptURL, {
+          method: 'POST',
+          body: JSON.stringify(data),
+          headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(result => {
+          if (result.status === 'success') {
+            alert(result.message);
+            form.reset();
+            fetchRecords();
+          } else {
+            alert('Erro: ' + result.message);
+          }
+        })
+        .catch(error => {
+          console.error('Erro ao enviar os dados:', error);
+        });
+      }
+    });
+ 
+    // Inicializa a lista de registros ao carregar a página
+    window.onload = fetchRecords;
+  </script>
+</body>
+</html>
+Google Drive: login
+Acesse o Google Drive com uma Conta do Google pessoal ou uma conta do Google Workspace, para uso comercial.
+ 
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Registro de Corridas na Esteira</title>
+  <!-- Inclusão do Chart.js para gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f2f2f2;
+      color: #333;
+    }
+    .container {
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+    h1, h2, h3 {
+      text-align: center;
+      color: #222;
+    }
+    form {
+      background: #fff;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    form div {
+      margin-bottom: 15px;
+    }
+    label {
+      display: inline-block;
+      width: 140px;
+      font-weight: bold;
+    }
+    input[type="text"],
+    input[type="number"] {
+      padding: 8px;
+      width: calc(100% - 160px);
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    input[type="submit"] {
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+    input[type="submit"]:hover {
+      background-color: #218838;
+    }
+    .section {
+      background: #fff;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    .records ul, .ranking ol {
+      list-style: none;
+      padding: 0;
+    }
+    .records li, .ranking li {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    .records li:last-child, .ranking li:last-child {
+      border-bottom: none;
+    }
+    .chart-container {
+      margin-bottom: 40px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #fafafa;
+    }
+    .chart-container canvas {
+      width: 100%;
+      height: auto;
+    }
+    /* Botão para alternar a exibição das corridas */
+    #toggleRecords {
+      display: block;
+      margin: 10px auto 20px auto;
+      padding: 8px 16px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+    #toggleRecords:hover {
+      background-color: #0069d9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Registro de Corridas na Esteira</h1>
+    
+    <form id="runForm">
+      <div>
+        <label for="nome">Nome:</label>
+        <input type="text" id="nome" name="nome" required>
+      </div>
+      <div>
+        <label for="distancia">Distância (km):</label>
+        <input type="number" id="distancia" name="distancia" step="0.01" required>
+      </div>
+      <div>
+        <label for="tempo">Tempo (min):</label>
+        <input type="number" id="tempo" name="tempo" step="0.1" required>
+      </div>
+      <input type="submit" value="Registrar Corrida">
+    </form>
+    
+    <div class="section records">
+      <h2>Corridas Registradas</h2>
+      <!-- Botão para esconder/exibir a lista -->
+      <button id="toggleRecords">Esconder Corridas Registradas</button>
+      <ul id="recordList"></ul>
+    </div>
+    
+    <div class="section ranking">
+      <h2>Ranking por Distância Total</h2>
+      <ol id="rankingList"></ol>
+    </div>
+    
+    <div class="section charts">
+      <h2>Gráficos Evolutivos por Corredor</h2>
+      <div id="chartsContainer"></div>
+    </div>
+  </div>
+  
+  <script>
+    const form = document.getElementById('runForm');
+    const recordList = document.getElementById('recordList');
+    const rankingList = document.getElementById('rankingList');
+    const chartsContainer = document.getElementById('chartsContainer');
+    const toggleRecordsBtn = document.getElementById('toggleRecords');
+    // URL do seu Web App do Google Apps Script
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxH63iSixzbxZfimPDvEwS3BjRSyb8--Wh9l0Xi1bJkXsuaLhrSGKlSVNcKA5zmpE0qbQ/exec';
+ 
+    // Função para buscar os registros via GET
+    function fetchRecords() {
+      fetch(scriptURL)
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success' && data.data.length > 0) {
+            updateRecordsList(data.data);
+            updateRanking(data.data);
+            updateCharts(data.data);
+          } else {
+            recordList.innerHTML = '<li>Nenhuma corrida registrada.</li>';
+            rankingList.innerHTML = '<li>Nenhuma corrida registrada.</li>';
+            chartsContainer.innerHTML = '<p>Nenhum dado para exibir gráfico.</p>';
+          }
+        })
+        .catch(error => {
+          console.error('Erro ao buscar os registros:', error);
+        });
+    }
+    
+    // Atualiza a lista completa de registros
+    function updateRecordsList(records) {
+      recordList.innerHTML = '';
+      records.forEach(record => {
+        const li = document.createElement('li');
+        li.textContent = `${record.nome} - ${record.distancia} km em ${record.tempo} minutos`;
+        recordList.appendChild(li);
+      });
+    }
+    
+    // Calcula e exibe o ranking (por soma de distâncias) para cada corredor
+    function updateRanking(records) {
+      const rankingData = {};
+      records.forEach(record => {
+        const nome = record.nome;
+        const distancia = parseFloat(record.distancia) || 0;
+        if (!rankingData[nome]) {
+          rankingData[nome] = 0;
+        }
+        rankingData[nome] += distancia;
+      });
+      // Ordena os corredores do maior para o menor total de distância
+      const rankingArray = Object.entries(rankingData).sort((a, b) => b[1] - a[1]);
+      rankingList.innerHTML = '';
+      rankingArray.forEach(([nome, totalDistancia], index) => {
+        const li = document.createElement('li');
+        li.textContent = `${index + 1}º - ${nome}: ${totalDistancia.toFixed(2)} km`;
+        rankingList.appendChild(li);
+      });
+    }
+    
+    // Cria gráficos evolutivos para cada corredor usando Chart.js
+    function updateCharts(records) {
+      // Limpa o container de gráficos
+      chartsContainer.innerHTML = '';
+      // Agrupa os registros por nome
+      const grupos = {};
+      records.forEach(record => {
+        const nome = record.nome;
+        const distancia = parseFloat(record.distancia) || 0;
+        if (!grupos[nome]) {
+          grupos[nome] = [];
+        }
+        grupos[nome].push(distancia);
+      });
+      
+      // Para cada corredor, cria um canvas e renderiza o gráfico
+      Object.keys(grupos).forEach(nome => {
+        const distancias = grupos[nome];
+        // Cria um container para o gráfico
+        const div = document.createElement('div');
+        div.className = 'chart-container';
+        // Cria um título para o gráfico
+        const titulo = document.createElement('h3');
+        titulo.textContent = `Evolução - ${nome}`;
+        div.appendChild(titulo);
+        // Cria o elemento canvas
+        const canvas = document.createElement('canvas');
+        canvas.id = 'chart-' + nome.replace(/\s+/g, '-').toLowerCase();
+        div.appendChild(canvas);
+        chartsContainer.appendChild(div);
+        
+        // Define os labels como sequência de tentativas (1, 2, 3, …)
+        const labels = distancias.map((_, index) => index + 1);
+        
+        // Renderiza o gráfico de linha utilizando Chart.js
+        new Chart(canvas, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Distância (km)',
+              data: distancias,
+              borderColor: 'rgba(75, 192, 192, 1)',
+              backgroundColor: 'rgba(75, 192, 192, 0.2)',
+              fill: true,
+              tension: 0.2
+            }]
+          },
+          options: {
+            scales: {
+              x: {
+                title: { display: true, text: 'Tentativa' }
+              },
+              y: {
+                title: { display: true, text: 'Distância (km)' },
+                beginAtZero: true
+              }
+            }
+          }
+        });
+      });
+    }
+    
+    // Processa o envio do formulário via POST
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const nome = document.getElementById('nome').value.trim();
+      const distancia = document.getElementById('distancia').value;
+      const tempo = document.getElementById('tempo').value;
+      
+      if (nome && distancia && tempo) {
+        const data = { nome, distancia, tempo };
+        fetch(scriptURL, {
+          method: 'POST',
+          body: JSON.stringify(data),
+          headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(result => {
+          if (result.status === 'success') {
+            alert(result.message);
+            form.reset();
+            fetchRecords();
+          } else {
+            alert('Erro: ' + result.message);
+          }
+        })
+        .catch(error => {
+          console.error('Erro ao enviar os dados:', error);
+        });
+      }
+    });
+    
+    // Função para alternar a exibição das corridas registradas
+    toggleRecordsBtn.addEventListener('click', function() {
+      if (recordList.style.display === 'none') {
+        recordList.style.display = 'block';
+        toggleRecordsBtn.textContent = 'Esconder Corridas Registradas';
+      } else {
+        recordList.style.display = 'none';
+        toggleRecordsBtn.textContent = 'Exibir Corridas Registradas';
+      }
+    });
+    
+    // Inicializa os dados ao carregar a página
+    window.onload = fetchRecords;
+  </script>
+</body>
+</html>
+ 
