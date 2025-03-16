@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Registro de Corridas na Esteira</title>
   <!-- Inclusão do Chart.js para gráficos -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -102,12 +103,27 @@
     #toggleRecords:hover {
       background-color: #0069d9;
     }
+    /* Ajustes responsivos */
+    @media(max-width: 600px) {
+      label {
+        width: 100%;
+        margin-bottom: 5px;
+      }
+      input[type="text"],
+      input[type="number"] {
+        width: 100%;
+      }
+      form div {
+        display: flex;
+        flex-direction: column;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Registro de Corridas na Esteira</h1>
-    
+   
     <form id="runForm">
       <div>
         <label for="nome">Nome:</label>
@@ -123,191 +139,182 @@
       </div>
       <input type="submit" value="Registrar Corrida">
     </form>
-    
+   
     <div class="section records">
       <h2>Corridas Registradas</h2>
-      <!-- Botão para esconder/exibir a lista -->
-      <button id="toggleRecords">Esconder Corridas Registradas</button>
+      <button id="toggleRecords">Esconder</button>
       <ul id="recordList"></ul>
     </div>
-    
+   
     <div class="section ranking">
-      <h2>Ranking por Distância Total</h2>
+      <h2>Ranking por Distância</h2>
       <ol id="rankingList"></ol>
     </div>
-    
+   
     <div class="section charts">
-      <h2>Gráficos Evolutivos por Corredor</h2>
+      <h2>Evolutivos por Corredor</h2>
       <div id="chartsContainer"></div>
     </div>
   </div>
-  
-  <script>
-    const form = document.getElementById('runForm');
-    const recordList = document.getElementById('recordList');
-    const rankingList = document.getElementById('rankingList');
-    const chartsContainer = document.getElementById('chartsContainer');
-    const toggleRecordsBtn = document.getElementById('toggleRecords');
-    // URL do seu Web App do Google Apps Script
-const scriptURL = 'https://script.google.com/macros/s/AKfycbxH63iSixzbxZfimPDvEwS3BjRSyb8--Wh9l0Xi1bJkXsuaLhrSGKlSVNcKA5zmpE0qbQ/exec';
  
-    // Função para buscar os registros via GET
-    function fetchRecords() {
-      fetch(scriptURL)
-        .then(response => response.json())
-        .then(data => {
-          if (data.status === 'success' && data.data.length > 0) {
-            updateRecordsList(data.data);
-            updateRanking(data.data);
-            updateCharts(data.data);
-          } else {
-            recordList.innerHTML = '<li>Nenhuma corrida registrada.</li>';
-            rankingList.innerHTML = '<li>Nenhuma corrida registrada.</li>';
-            chartsContainer.innerHTML = '<p>Nenhum dado para exibir gráfico.</p>';
-          }
-        })
-        .catch(error => {
-          console.error('Erro ao buscar os registros:', error);
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('runForm');
+      const recordList = document.getElementById('recordList');
+      const rankingList = document.getElementById('rankingList');
+      const chartsContainer = document.getElementById('chartsContainer');
+      const toggleRecordsBtn = document.getElementById('toggleRecords');
+      // URL do seu Web App do Google Apps Script (certifique-se de que esteja publicado com acesso público)
+const scriptURL = 'https://script.google.com/macros/s/AKfycbye0jjTe3F2jrKbeelfZmwj3keHxc6JWVzNOLyTXb4o1DD6oQKuiVLsSl3G5vhHEUk7bQ/exec';
+     
+      // Busca os registros via GET
+      function fetchRecords() {
+        fetch(scriptURL)
+          .then(response => response.json())
+          .then(data => {
+            if (data.status === 'success' && data.data.length > 0) {
+              updateRecordsList(data.data);
+              updateRanking(data.data);
+              updateCharts(data.data);
+            } else {
+              recordList.innerHTML = '<li>Nenhuma corrida registrada.</li>';
+              rankingList.innerHTML = '<li>Nenhuma corrida registrada.</li>';
+              chartsContainer.innerHTML = '<p>Nenhum dado para exibir gráfico.</p>';
+            }
+          })
+          .catch(error => {
+            console.error('Erro ao buscar os registros:', error);
+          });
+      }
+     
+      // Atualiza a lista de corridas registradas
+      function updateRecordsList(records) {
+        recordList.innerHTML = '';
+        records.forEach(record => {
+          const li = document.createElement('li');
+          li.textContent = `${record.nome} - ${record.distancia} km em ${record.tempo} minutos`;
+          recordList.appendChild(li);
         });
-    }
-    
-    // Atualiza a lista completa de registros
-    function updateRecordsList(records) {
-      recordList.innerHTML = '';
-      records.forEach(record => {
-        const li = document.createElement('li');
-        li.textContent = `${record.nome} - ${record.distancia} km em ${record.tempo} minutos`;
-        recordList.appendChild(li);
-      });
-    }
-    
-    // Calcula e exibe o ranking (por soma de distâncias) para cada corredor
-    function updateRanking(records) {
-      const rankingData = {};
-      records.forEach(record => {
-        const nome = record.nome;
-        const distancia = parseFloat(record.distancia) || 0;
-        if (!rankingData[nome]) {
-          rankingData[nome] = 0;
-        }
-        rankingData[nome] += distancia;
-      });
-      // Ordena os corredores do maior para o menor total de distância
-      const rankingArray = Object.entries(rankingData).sort((a, b) => b[1] - a[1]);
-      rankingList.innerHTML = '';
-      rankingArray.forEach(([nome, totalDistancia], index) => {
-        const li = document.createElement('li');
-        li.textContent = `${index + 1}º - ${nome}: ${totalDistancia.toFixed(2)} km`;
-        rankingList.appendChild(li);
-      });
-    }
-    
-    // Cria gráficos evolutivos para cada corredor usando Chart.js
-    function updateCharts(records) {
-      // Limpa o container de gráficos
-      chartsContainer.innerHTML = '';
-      // Agrupa os registros por nome
-      const grupos = {};
-      records.forEach(record => {
-        const nome = record.nome;
-        const distancia = parseFloat(record.distancia) || 0;
-        if (!grupos[nome]) {
-          grupos[nome] = [];
-        }
-        grupos[nome].push(distancia);
-      });
-      
-      // Para cada corredor, cria um canvas e renderiza o gráfico
-      Object.keys(grupos).forEach(nome => {
-        const distancias = grupos[nome];
-        // Cria um container para o gráfico
-        const div = document.createElement('div');
-        div.className = 'chart-container';
-        // Cria um título para o gráfico
-        const titulo = document.createElement('h3');
-        titulo.textContent = `Evolução - ${nome}`;
-        div.appendChild(titulo);
-        // Cria o elemento canvas
-        const canvas = document.createElement('canvas');
+      }
+     
+      // Calcula e exibe o ranking por distância acumulada
+      function updateRanking(records) {
+        const rankingData = {};
+        records.forEach(record => {
+          const nome = record.nome;
+          const distancia = parseFloat(record.distancia) || 0;
+          if (!rankingData[nome]) {
+            rankingData[nome] = 0;
+          }
+          rankingData[nome] += distancia;
+        });
+        const rankingArray = Object.entries(rankingData).sort((a, b) => b[1] - a[1]);
+        rankingList.innerHTML = '';
+        rankingArray.forEach(([nome, totalDistancia], index) => {
+          const li = document.createElement('li');
+          li.textContent = `${index + 1}º - ${nome}: ${totalDistancia.toFixed(2)} km`;
+          rankingList.appendChild(li);
+        });
+      }
+     
+      // Cria gráficos evolutivos para cada corredor
+      function updateCharts(records) {
+        chartsContainer.innerHTML = '';
+        const grupos = {};
+        records.forEach(record => {
+          const nome = record.nome;
+          const distancia = parseFloat(record.distancia) || 0;
+          if (!grupos[nome]) {
+            grupos[nome] = [];
+          }
+          grupos[nome].push(distancia);
+        });
+       
+        Object.keys(grupos).forEach(nome => {
+          const distancias = grupos[nome];
+          const div = document.createElement('div');
+          div.className = 'chart-container';
+          const titulo = document.createElement('h3');
+          titulo.textContent = `Evolução - ${nome}`;
+          div.appendChild(titulo);
+          const canvas = document.createElement('canvas');
 canvas.id = 'chart-' + nome.replace(/\s+/g, '-').toLowerCase();
-        div.appendChild(canvas);
-        chartsContainer.appendChild(div);
-        
-        // Define os labels como sequência de tentativas (1, 2, 3, …)
-        const labels = distancias.map((_, index) => index + 1);
-        
-        // Renderiza o gráfico de linha utilizando Chart.js
-        new Chart(canvas, {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: 'Distância (km)',
-              data: distancias,
-              borderColor: 'rgba(75, 192, 192, 1)',
-              backgroundColor: 'rgba(75, 192, 192, 0.2)',
-              fill: true,
-              tension: 0.2
-            }]
-          },
-          options: {
-            scales: {
-              x: {
-                title: { display: true, text: 'Tentativa' }
-              },
-              y: {
-                title: { display: true, text: 'Distância (km)' },
-                beginAtZero: true
+          div.appendChild(canvas);
+          chartsContainer.appendChild(div);
+         
+          const labels = distancias.map((_, index) => index + 1);
+         
+          new Chart(canvas, {
+            type: 'line',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Distância (km)',
+                data: distancias,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                fill: true,
+                tension: 0.2
+              }]
+            },
+            options: {
+              scales: {
+                x: {
+                  title: { display: true, text: 'Tentativa' }
+                },
+                y: {
+                  title: { display: true, text: 'Distância (km)' },
+                  beginAtZero: true
+                }
               }
             }
-          }
-        });
-      });
-    }
-    
-    // Processa o envio do formulário via POST
-    form.addEventListener('submit', function(e) {
-      e.preventDefault();
-      const nome = document.getElementById('nome').value.trim();
-      const distancia = document.getElementById('distancia').value;
-      const tempo = document.getElementById('tempo').value;
-      
-      if (nome && distancia && tempo) {
-        const data = { nome, distancia, tempo };
-        fetch(scriptURL, {
-          method: 'POST',
-          body: JSON.stringify(data),
-          headers: { 'Content-Type': 'application/json' }
-        })
-        .then(response => response.json())
-        .then(result => {
-          if (result.status === 'success') {
-            alert(result.message);
-            form.reset();
-            fetchRecords();
-          } else {
-            alert('Erro: ' + result.message);
-          }
-        })
-        .catch(error => {
-          console.error('Erro ao enviar os dados:', error);
+          });
         });
       }
-    });
-    
-    // Função para alternar a exibição das corridas registradas
-    toggleRecordsBtn.addEventListener('click', function() {
+     
+      // Envio do formulário (registro via POST)
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const nome = document.getElementById('nome').value.trim();
+        const distancia = document.getElementById('distancia').value;
+        const tempo = document.getElementById('tempo').value;
+       
+        if (nome && distancia && tempo) {
+          const data = { nome, distancia, tempo };
+          fetch(scriptURL, {
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers: { 'Content-Type': 'application/json' }
+          })
+          .then(response => response.json())
+          .then(result => {
+            if (result.status === 'success') {
+              alert(result.message);
+              form.reset();
+              fetchRecords();
+            } else {
+              alert('Erro: ' + result.message);
+            }
+          })
+          .catch(error => {
+            console.error('Erro ao enviar os dados:', error);
+          });
+        }
+      });
+     
+      // Alterna a exibição da lista de corridas
+      toggleRecordsBtn.addEventListener('click', function() {
 if (recordList.style.display === 'none') {
 recordList.style.display = 'block';
-        toggleRecordsBtn.textContent = 'Esconder Corridas Registradas';
-      } else {
+          toggleRecordsBtn.textContent = 'Esconder Corridas Registradas';
+        } else {
 recordList.style.display = 'none';
-        toggleRecordsBtn.textContent = 'Exibir Corridas Registradas';
-      }
+          toggleRecordsBtn.textContent = 'Exibir Corridas Registradas';
+        }
+      });
+     
+      fetchRecords();
     });
-    
-    // Inicializa os dados ao carregar a página
-    window.onload = fetchRecords;
   </script>
 </body>
 </html>
